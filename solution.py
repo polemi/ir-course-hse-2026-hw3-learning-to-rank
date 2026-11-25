@@ -12,10 +12,10 @@ from catboost import CatBoostRanker, Pool
 
 SEED = 42
 THREADS = 8
-FEATURE_MODE = 'both'
+FEATURE_MODE = 'standard'
 PARAMS = {
     'loss_function': 'YetiRank',
-    'iterations': 900,
+    'iterations': 1100,
     'learning_rate': 0.04,
     'depth': 6,
     'l2_leaf_reg': 10,
@@ -44,6 +44,11 @@ def make_features(data, columns, mode='raw'):
         return pd.concat([values, scaled], axis=1)
     if mode == 'both':
         return pd.concat([values, ranks, scaled], axis=1)
+    if mode == 'standard':
+        deviation = groups.transform('std').replace(0, np.nan)
+        standardized = ((values - groups.transform('mean')) / deviation).fillna(0).astype(np.float32)
+        standardized.columns = [f'{column}__standard' for column in columns]
+        return pd.concat([values, ranks, scaled, standardized], axis=1)
     raise ValueError(f'Unknown feature mode: {mode}')
 
 
